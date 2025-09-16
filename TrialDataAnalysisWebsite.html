@@ -1,0 +1,145 @@
+<!-- Keep in a singular consolidated file right now until handling the back end. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload & Display Data</title>
+
+  <!-- Bootstrap pull for layout-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <!--Imports PapaParse for csv uploads -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+   <!-- Imports Sheetjs for xlsx files handleing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    header {
+        background-color: royalblue;
+        color: white;
+        text-align: center;
+    }
+    body {
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      margin-top: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #003366;
+    }
+    .hidden {
+      display: none;
+    }
+    .table-container {
+      max-height: 500px; /* Set desired viewport height */
+      overflow: auto;
+    }
+  </style>
+</head>
+
+ <!-- Main title -->
+<header>
+<h1>Bogmayer Analytics Dashboard</h1>
+</header>
+<body>
+<div class="container">
+  <div class="card p-4">
+     <!-- find a way to upload df here -->
+    <section id="upload-section">
+      <h2>Upload Dataset</h2>
+      <input type="file" id="fileInput" class="form-control" accept=".csv, .xlsx, .xls">
+    </section>
+     <!-- preview df in scalable manner -->
+    <section id="preview" class="hidden mt-4">
+      <h2>Data Preview</h2>
+      <div class="table-responsive table-container">
+        <table class="table table-striped" id="data-table"></table>
+      </div>
+    </section>
+  </div>
+</div>
+
+
+<!-- Javascript for upload, parse, display-->
+<script>
+  //references for import
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('preview');
+  const dataTable = document.getElementById('data-table');
+  let dataset = [];
+
+
+
+  fileInput.addEventListener('change', handleFile);
+
+  //Stores data
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    //handle if file is csv with Papa.parse
+    if (file.name.endsWith('.csv')) {
+      reader.onload = function(event) {
+        const text = event.target.result;
+        const result = Papa.parse(text, {header: true});
+        dataset = result.data;
+        displayData();
+      };
+      reader.readAsText(file);
+    } else {
+      //read xlsx files
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        dataset = XLSX.utils.sheet_to_json(firstSheet);
+        displayData();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  //show the df as a scrollable preview 
+  function displayData() {
+    if (dataset.length === 0) return;
+
+    preview.classList.remove('hidden');
+
+    const columns = Object.keys(dataset[0]);
+    let tableHTML = '<thead><tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr></thead><tbody>';
+    dataset.forEach(row => {
+      tableHTML += '<tr>' + columns.map(col => `<td>${row[col] ?? ''}</td>`).join('') + '</tr>';
+    });
+    tableHTML += '</tbody>';
+    dataTable.innerHTML = tableHTML;
+  }
+
+</script>
+
+
+<h1>Data Analysis </h1>
+<h4>Need to complete by 9/19/25 </h4>
+
+<h1>Data Visualization</h1>
+<h4>Need to complete by ...(need to look at cal) </h4>
+
+<h1>Summary</h1>
+<h4>Need to Complete by ... (same)</h4>
+
+<h1>Report</h1>
+<h4>Need to Complete by ...(Same) </h4>
+
+</body>
+</html>
+
+
+
+
+
