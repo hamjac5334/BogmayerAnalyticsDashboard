@@ -55,12 +55,20 @@
       <h2>Upload Dataset</h2>
       <input type="file" id="fileInput" class="form-control" accept=".csv, .xlsx, .xls">
     </section>
+
      <!-- preview df in scalable manner -->
     <section id="preview" class="hidden mt-4">
       <h2>Data Preview</h2>
       <div class="table-responsive table-container">
         <table class="table table-striped" id="data-table"></table>
       </div>
+    </section>
+
+    <!-- Descriptive Statistics (pre backend)-->
+    <section id="analysis" class="hidden mt-4">
+      <h2>Basic Data Analysis</h2>
+      <h3>Complete by 9/19/25 (this is only front end rn)</h3>
+      <div id="summary-stats"></div>
     </section>
   </div>
 </div>
@@ -72,6 +80,8 @@
   const fileInput = document.getElementById('fileInput');
   const preview = document.getElementById('preview');
   const dataTable = document.getElementById('data-table');
+  const analysis = document.getElementById('analysis');
+  const summaryDiv = document.getElementById('summary-stats');
   let dataset = [];
 
 
@@ -89,8 +99,9 @@
       reader.onload = function(event) {
         const text = event.target.result;
         const result = Papa.parse(text, {header: true});
-        dataset = result.data;
+        dataset = esult.data.filter(row => Object.keys(row).length > 1);
         displayData();
+        runAnalysis();
       };
       reader.readAsText(file);
     } else {
@@ -101,6 +112,7 @@
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         dataset = XLSX.utils.sheet_to_json(firstSheet);
         displayData();
+        runAnalysis();
       };
       reader.readAsArrayBuffer(file);
     }
@@ -121,11 +133,54 @@
     dataTable.innerHTML = tableHTML;
   }
 
+
+  //analysis function
+  // ref https://www.geeksforgeeks.org/javascript/data-analysis-with-javascript/
+  //https://dev.to/jjude/descriptive-analytics-in-javascript
+  //https://stackoverflow.com/questions/65747437/how-to-check-table-column-data-type
+  function runAnalysis() {
+    if (dataset.length === 0) return;
+
+    analysis.classList.remove('hidden');
+    const columns = Object.keys(dataset[0]);
+    let html = `<p><b>Rows:</b> ${dataset.length}, <b>Columns:</b> ${columns.length}</p>`;
+    
+    html += `<table class="table table-bordered"><thead><tr>
+              <th>Column</th><th>Type (guess)</th><th>Missing</th><th>Example</th><th>Stats</th>
+             </tr></thead><tbody>`;
+
+    columns.forEach(col => {
+      const values = dataset.map(row => row[col]).filter(v => v !== undefined && v !== "");
+      const missing = dataset.length - values.length;
+
+      let type = "string";
+      let stats = "-";
+      if (values.every(v => !isNaN(parseFloat(v)))) {
+        type = "number";
+        const nums = values.map(v => parseFloat(v));
+        const min = Math.min(...nums);
+        const max = Math.max(...nums);
+        const mean = (nums.reduce((a,b) => a+b, 0) / nums.length).toFixed(2);
+        stats = `min: ${min}, max: ${max}, mean: ${mean}`;
+      } else if (values.every(v => !isNaN(Date.parse(v)))) {
+        type = "date";
+      }
+
+      html += `<tr>
+                <td>${col}</td>
+                <td>${type}</td>
+                <td>${missing}</td>
+                <td>${values[0] ?? ""}</td>
+                <td>${stats}</td>
+               </tr>`;
+    });
+
+    html += "</tbody></table>";
+    summaryDiv.innerHTML = html;
+  }
+
 </script>
 
-
-<h1>Data Analysis </h1>
-<h4>Need to complete by 9/19/25 </h4>
 
 <h1>Data Visualization</h1>
 <h4>Need to complete by ...(need to look at cal) </h4>
